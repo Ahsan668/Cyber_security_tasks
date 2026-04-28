@@ -12,11 +12,13 @@ import express from 'express';
 import path from 'path';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+const helmet = require('helmet');
 import insecureSession from './sessions';
 import { initialize } from './orm';
 import guest from './routes/guest';
 import unsecured from './routes/unsecured';
 import secured from './routes/secured';
+import logger from './logger';
 import { exit } from 'process';
 
 const app = express();
@@ -58,14 +60,23 @@ console.log('It should not be used in production.');
 console.log('It should only be used behind a secure firewall.');
 console.log();
 
+logger.info('Application starting with security enhancements applied');
+
 //--------------------------------------------------------
 // Start Express
 //--------------------------------------------------------
 
 // Use the EJS view engine
-// Note: all the EJS views have been written to allow HTML injection
 app.set('views', path.join(__dirname, '../views'));
 app.set('view engine', 'ejs');
+
+// Apply security headers with Helmet.js
+// This prevents multiple attack types:
+// - X-Frame-Options: Prevents clickjacking
+// - X-Content-Type-Options: Prevents MIME-type sniffing
+// - Strict-Transport-Security: Enforces HTTPS
+// - Content-Security-Policy: Restricts resource loading
+app.use(helmet());
 
 // Parse cookies and HTML forms
 app.use(cookieParser());
@@ -100,8 +111,10 @@ async function start() {
         port,
         bind,
         () => {
+            const message = `Server started on ${bind}:${port}`;
             console.log(`Bunch of friends is running on interface ${bind}, port ${port}`);
             console.log(`Open your browser to http://localhost:${port}/`);
+            logger.info(message, { bind, port, security: 'enabled' });
         }
     );
 }

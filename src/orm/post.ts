@@ -10,6 +10,7 @@
 
 import alasql from 'alasql';
 import User from './user';
+import { sanitizeId, sanitizeHtmlOutput } from '../security';
 
 // Format used for rendering dates in the user interface
 const dateFormat = new Intl.DateTimeFormat(
@@ -48,7 +49,12 @@ export default class Post {
     // Find the unique post with a matching id
     // returns null if there is no such post
     static async byId(id: number): Promise<Post | null> {
-        const posts = await Post.byWhere(`id = ${id}`);
+        // Sanitize ID to ensure it's a safe integer (prevents SQL injection)
+        const sanitizedId = sanitizeId(id);
+        if (sanitizedId === null) {
+            return null;
+        }
+        const posts = await Post.byWhere(`id = ${sanitizedId}`);
         if (posts.length > 0)
             return posts[0];
         else
@@ -83,9 +89,16 @@ export default class Post {
     // Create a new post in the database
     // Updates 'this' with the new 'id'
     async create(): Promise<void> {
+        // Sanitize the message to prevent XSS attacks
+        // This removes any HTML/JavaScript while preserving safe content
+        const sanitizedMessage = sanitizeHtmlOutput(this.message);
+
+        // Escape special characters to prevent SQL injection
+        const escapedMessage = sanitizedMessage.replace(/'/g, "''");
+
         await alasql.promise(
-            `insert into posts (creator, message, creationDate, likes) 
-             values (${this.creator.id}, '${this.message}', '${this.creationDate}', ${this.likes})`
+            `insert into posts (creator, message, creationDate, likes)
+             values (${this.creator.id}, '${escapedMessage}', '${this.creationDate}', ${this.likes})`
         );
         // Retrive the identifier of the new row
         this.id = alasql.autoval('posts', 'id');

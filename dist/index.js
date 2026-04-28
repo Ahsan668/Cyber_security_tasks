@@ -25,11 +25,13 @@ const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const helmet = require('helmet');
 const sessions_1 = __importDefault(require("./sessions"));
 const orm_1 = require("./orm");
 const guest_1 = __importDefault(require("./routes/guest"));
 const unsecured_1 = __importDefault(require("./routes/unsecured"));
 const secured_1 = __importDefault(require("./routes/secured"));
+const logger_1 = __importDefault(require("./logger"));
 const process_1 = require("process");
 const app = express_1.default();
 let port = 3000;
@@ -65,13 +67,20 @@ console.log('Bunch of Friends is an intentionally insecure application.');
 console.log('It should not be used in production.');
 console.log('It should only be used behind a secure firewall.');
 console.log();
+logger_1.default.info('Application starting with security enhancements applied');
 //--------------------------------------------------------
 // Start Express
 //--------------------------------------------------------
 // Use the EJS view engine
-// Note: all the EJS views have been written to allow HTML injection
 app.set('views', path_1.default.join(__dirname, '../views'));
 app.set('view engine', 'ejs');
+// Apply security headers with Helmet.js
+// This prevents multiple attack types:
+// - X-Frame-Options: Prevents clickjacking
+// - X-Content-Type-Options: Prevents MIME-type sniffing
+// - Strict-Transport-Security: Enforces HTTPS
+// - Content-Security-Policy: Restricts resource loading
+app.use(helmet());
 // Parse cookies and HTML forms
 app.use(cookie_parser_1.default());
 app.use(body_parser_1.default.urlencoded({ extended: false }));
@@ -98,8 +107,10 @@ function start() {
         yield orm_1.initialize();
         // Start express
         app.listen(port, bind, () => {
+            const message = `Server started on ${bind}:${port}`;
             console.log(`Bunch of friends is running on interface ${bind}, port ${port}`);
             console.log(`Open your browser to http://localhost:${port}/`);
+            logger_1.default.info(message, { bind, port, security: 'enabled' });
         });
     });
 }

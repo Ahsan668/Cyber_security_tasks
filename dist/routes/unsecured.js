@@ -23,15 +23,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_promise_router_1 = __importDefault(require("express-promise-router"));
 const orm_1 = require("../orm");
+const security_1 = require("../security");
 const route = express_promise_router_1.default();
 //--------------------------------------------------------
 // Routes that *should* only be used by logged in users
 // Note: these are intentionally not properly secured
 //--------------------------------------------------------
 // Shows the list of posts by a friend
-// Note: no validation that the friend actually is a friend of the current user
 route.get('/posts_friend', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const friendId = Number(req.query.friend);
+    // Sanitize the friend ID to prevent SQL injection
+    const friendId = security_1.sanitizeId(Number(req.query.friend));
+    if (friendId === null) {
+        res.render('posts_friend', { view: 'posts_friend', friend: null, posts: [], error: 'Invalid friend ID' });
+        return;
+    }
     const friend = yield orm_1.User.byId(friendId);
     let posts = [];
     if (friend != null)
@@ -39,15 +44,19 @@ route.get('/posts_friend', (req, res) => __awaiter(void 0, void 0, void 0, funct
     res.render('posts_friend', { view: 'posts_friend', friend, posts });
 }));
 // Like a post and redirect to the 'back' parameter
-// Note: the back parameter can be used for invalidated redirects
-// Note: no validation to prevent the user from liking their own posts
 route.get('/like', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const postId = Number(req.query.post);
-    const back = String(req.query.back);
-    const friendId = req.query.friend ? Number(req.query.friend) : null;
+    // Sanitize post ID to prevent SQL injection
+    const postId = security_1.sanitizeId(Number(req.query.post));
+    if (postId === null) {
+        res.status(400).send('Invalid post ID');
+        return;
+    }
+    const back = String(req.query.back || '/');
+    const friendId = req.query.friend ? security_1.sanitizeId(Number(req.query.friend)) : null;
     const post = yield orm_1.Post.byId(postId);
-    if (post != null)
+    if (post != null) {
         yield post.like();
+    }
     res.redirect(303, back + (friendId ? `?friend=${friendId}` : ''));
 }));
 // Show the admin zone

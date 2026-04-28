@@ -1,21 +1,76 @@
-# Bunch of Friends JS
 
-An intentionally insecure web application.
+# BunchOfFriendsJS — Secured Version
 
-For full information please see my [blog post](https://www.benjaminjohnston.com.au/intentionallyinsecurejs).
+This project is a social networking web application originally designed to be intentionally insecure for educational purposes. Over the course of a 3-week cybersecurity internship, the app was fully assessed, hardened, and documented to address major security risks.
 
-To run:
-- Ensure a recent version of Node.js is installed
-- Ensure you have no services running on port 3000
-- Run `npx bjau/bunchoffriendsjs` and open your browser to [http://localhost:3000/](http://localhost:3000/) (the npx command will automatically download and run a temporary installation)
+---
 
-Do not use in production.
+## 🚀 Quick Start
 
-BunchOfFriendsJS is an intentionally insecure social network to teach web security. It has been developed for Node.js. It is designed to have many of the [OWASP Top 10](https://owasp.org/www-project-top-ten/) vulnerabilities.
+1. **Install dependencies:**
+	```bash
+	npm install
+	```
+2. **Build the project:**
+	```bash
+	npm run build
+	```
+3. **Start the server:**
+	```bash
+	npm start
+	```
+4. Open your browser to [http://localhost:3000/](http://localhost:3000/)
 
-**Options:** Use `npx bjau/bunchoffriendsjs --port 4000` to specify a different port (i.e., port 4000 in this case).
+---
 
-**Security:** The application is insecure. For safety, it will bind only to the loopback interface 127.0.0.1. To bind to all interfaces (0.0.0.0) and allow remote access, use `npx bjau/bunchoffriendsjs --public` to launch the web application.
+## 🔐 Security Improvements (2026)
 
-[Creative Commons Zero / Public Domain license](https://creativecommons.org/publicdomain/zero/1.0/)
+- Passwords are now hashed with bcrypt (no plain text storage)
+- SQL injection vulnerabilities fixed (input validation, escaping)
+- XSS (Cross-Site Scripting) mitigated (output encoding, sanitization)
+- Input validation for all user data
+- Security headers set with Helmet.js
+- Security logging with Winston (all events logged to `security.log`)
+- All major [OWASP Top 10](https://owasp.org/www-project-top-ten/) risks addressed
+
+See `SECURITY_IMPLEMENTATION.md` and `SECURITY_REPORT_WEEK2_WEEK3.md` for full details.
+
+---
+
+## 📂 Project Structure
+
+- `src/` — Application source code (routes, security, ORM, etc.)
+- `bin/` — Startup scripts
+- `dist/` — Compiled output
+- `static/` — CSS and static assets
+- `views/` — EJS templates
+- `security.log` — Security event log (not tracked in git)
+- `error.log` — Error log (not tracked in git)
+
+---
+
+## 📝 Documentation
+
+- `SECURITY_IMPLEMENTATION.md` — Implementation guide
+- `SECURITY_REPORT_WEEK2_WEEK3.md` — Vulnerability analysis & fixes
+- `SECURITY_CHECKLIST.md` — Checklist of all security tasks
+- `FINAL_SUBMISSION_REPORT.md` — Project summary and results
+
+---
+
+## ⚠️ Notes
+
+- This repo is now safe to open and use with git. The `.gitignore` is hand-written and only excludes files that should not be tracked (logs, build output, node_modules, IDE settings, etc.).
+- If you have issues opening this folder in git, make sure you are inside the `bunchoffriendsjs` directory and that `.git` exists here (it does by default after `git init`).
+- No files or folders required for git are excluded by `.gitignore`.
+
+---
+
+## 📜 License
+
+Originally: [Creative Commons Zero / Public Domain license](https://creativecommons.org/publicdomain/zero/1.0/)
+
+---
+
+**Project maintained and secured as part of a 2026 cybersecurity internship.**
 

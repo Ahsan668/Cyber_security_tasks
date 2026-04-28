@@ -23,6 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const alasql_1 = __importDefault(require("alasql"));
 const user_1 = __importDefault(require("./user"));
+const security_1 = require("../security");
 // Format used for rendering dates in the user interface
 const dateFormat = new Intl.DateTimeFormat(undefined, {
     day: 'numeric',
@@ -54,7 +55,12 @@ class Post {
     // returns null if there is no such post
     static byId(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const posts = yield Post.byWhere(`id = ${id}`);
+            // Sanitize ID to ensure it's a safe integer (prevents SQL injection)
+            const sanitizedId = security_1.sanitizeId(id);
+            if (sanitizedId === null) {
+                return null;
+            }
+            const posts = yield Post.byWhere(`id = ${sanitizedId}`);
             if (posts.length > 0)
                 return posts[0];
             else
@@ -81,8 +87,13 @@ class Post {
     // Updates 'this' with the new 'id'
     create() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield alasql_1.default.promise(`insert into posts (creator, message, creationDate, likes) 
-             values (${this.creator.id}, '${this.message}', '${this.creationDate}', ${this.likes})`);
+            // Sanitize the message to prevent XSS attacks
+            // This removes any HTML/JavaScript while preserving safe content
+            const sanitizedMessage = security_1.sanitizeHtmlOutput(this.message);
+            // Escape special characters to prevent SQL injection
+            const escapedMessage = sanitizedMessage.replace(/'/g, "''");
+            yield alasql_1.default.promise(`insert into posts (creator, message, creationDate, likes)
+             values (${this.creator.id}, '${escapedMessage}', '${this.creationDate}', ${this.likes})`);
             // Retrive the identifier of the new row
             this.id = alasql_1.default.autoval('posts', 'id');
         });

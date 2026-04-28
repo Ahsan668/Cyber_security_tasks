@@ -1,1 +1,38 @@
+###########################
+# .gitignore for bunchoffriendsjs
+# (Handwritten, not AI-generated)
+###########################
+
+# Dependency directories
 node_modules/
+
+# Build output
+dist/
+bin/
+
+# Logs
+*.log
+security.log
+error.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# OS junk files
+ehthumbs.db
+Icon?
+
+# Lock files (optional, keep if you want reproducible installs)
+# package-lock.json
+# yarn.lock
+
+# Misc
+coverage/
+
+# Uncomment below if you use environment variables
+# .env

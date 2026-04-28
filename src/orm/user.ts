@@ -10,6 +10,7 @@
 
 import alasql from 'alasql';
 import Post from './post';
+import { hashPassword, verifyPassword, sanitizeId } from '../security';
 
 // A user in the system
 export default class User {
@@ -24,7 +25,12 @@ export default class User {
     // Find the unique user with a matching id
     // returns null if there is no such user
     static async byId(id: number): Promise<User | null> {
-        const users = await User.byWhere(`id = ${id}`);
+        // Sanitize ID to ensure it's a safe integer (prevents SQL injection)
+        const sanitizedId = sanitizeId(id);
+        if (sanitizedId === null) {
+            return null;
+        }
+        const users = await User.byWhere(`id = ${sanitizedId}`);
         if (users.length > 0)
             return users[0];
         else
@@ -34,14 +40,23 @@ export default class User {
     // Find the unique user with a matching login username
     // returns null if there is no such user
     static async byLogin(username: string, password: string): Promise<User | null> {
+        // Use single quotes escape to prevent SQL injection
+        // username and password are properly escaped before being used in SQL
+        const escapedUsername = username.replace(/'/g, "''");
         const users = await User.byWhere(
-            `username = '${username}' 
-             and password = '${password}'`
+            `username = '${escapedUsername}'`
         );
-        if (users.length > 0)
-            return users[0];
-        else
-            return null;
+
+        // If user found, verify password using bcrypt
+        if (users.length > 0) {
+            const user = users[0];
+            // Verify the password matches the stored hash
+            const isPasswordValid = await verifyPassword(password, user.password);
+            if (isPasswordValid) {
+                return user;
+            }
+        }
+        return null;
     }
 
     // Find all users matching the supplied SQL 'where' clause
@@ -59,9 +74,17 @@ export default class User {
     // Updates 'this' with the new 'id'
     async create(): Promise<void> {
         try {
+            // Hash the password before storing in database
+            // Passwords should NEVER be stored in plain text
+            const hashedPassword = await hashPassword(this.password);
+
+            // Escape special characters to prevent SQL injection
+            const escapedUsername = this.username.replace(/'/g, "''");
+            const escapedFullName = this.fullName.replace(/'/g, "''");
+
             await alasql.promise(
-                `insert into users (username, password, fullName) 
-                 values ('${this.username}', '${this.password}', '${this.fullName}')`
+                `insert into users (username, password, fullName)
+                 values ('${escapedUsername}', '${hashedPassword}', '${escapedFullName}')`
             );
             // Retrive the identifier of the new row
             this.id = alasql.autoval('users', 'id');

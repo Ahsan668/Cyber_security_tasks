@@ -10,6 +10,7 @@
 
 import Router from 'express-promise-router';
 import { User, Post, Friend } from '../orm';
+import { sanitizeString, sanitizeId } from '../security';
 const route = Router();
 
 //--------------------------------------------------------
@@ -46,24 +47,34 @@ route.get('/posts_me', async (req, res) => {
 });
 
 // Create a new post and redirect back to the back parameter
-// Note: the back parameter can be used for invalidated redirects
 route.post('/post', async (req, res) => {
-    const message = String(req.body.message || '');
+    const message = sanitizeString(String(req.body.message || ''));
     const back = String(req.body.back || 'home');
-    if (req.session.user)
-        await new Post(req.session.user, message, new Date(), 0).create();
+
+    if (req.session.user) {
+        // Validate message is not empty
+        if (message.length > 0) {
+            await new Post(req.session.user, message, new Date(), 0).create();
+        }
+    }
     res.redirect(303, back);
 });
 
 // Add/connect to a friend based on their ID
-// Note: a GET request and no CSRF protections makes CSRF possible 
 route.get('/friend_add', async (req, res) => {
-    const friendId = Number(req.query.friend);
+    // Sanitize the friend ID to prevent SQL injection
+    const friendId = sanitizeId(Number(req.query.friend));
+    if (friendId === null) {
+        res.render('friend_add', { ...req.session, view: 'friend_add', friend: null, error: 'Invalid friend ID' });
+        return;
+    }
+
     // Retrieve the new friend
     const friend = await User.byId(friendId);
     // If found, then add the new relationship/connection
-    if (friend && req.session.user)
+    if (friend && req.session.user) {
         new Friend(req.session.user, friend).create();
+    }
     res.render('friend_add', { ...req.session, view: 'friend_add', friend});
 });
 

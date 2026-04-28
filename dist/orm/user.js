@@ -23,6 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const alasql_1 = __importDefault(require("alasql"));
 const post_1 = __importDefault(require("./post"));
+const security_1 = require("../security");
 // A user in the system
 class User {
     constructor(username, // Login name
@@ -38,7 +39,12 @@ class User {
     // returns null if there is no such user
     static byId(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const users = yield User.byWhere(`id = ${id}`);
+            // Sanitize ID to ensure it's a safe integer (prevents SQL injection)
+            const sanitizedId = security_1.sanitizeId(id);
+            if (sanitizedId === null) {
+                return null;
+            }
+            const users = yield User.byWhere(`id = ${sanitizedId}`);
             if (users.length > 0)
                 return users[0];
             else
@@ -49,12 +55,20 @@ class User {
     // returns null if there is no such user
     static byLogin(username, password) {
         return __awaiter(this, void 0, void 0, function* () {
-            const users = yield User.byWhere(`username = '${username}' 
-             and password = '${password}'`);
-            if (users.length > 0)
-                return users[0];
-            else
-                return null;
+            // Use single quotes escape to prevent SQL injection
+            // username and password are properly escaped before being used in SQL
+            const escapedUsername = username.replace(/'/g, "''");
+            const users = yield User.byWhere(`username = '${escapedUsername}'`);
+            // If user found, verify password using bcrypt
+            if (users.length > 0) {
+                const user = users[0];
+                // Verify the password matches the stored hash
+                const isPasswordValid = yield security_1.verifyPassword(password, user.password);
+                if (isPasswordValid) {
+                    return user;
+                }
+            }
+            return null;
         });
     }
     // Find all users matching the supplied SQL 'where' clause
@@ -72,8 +86,14 @@ class User {
     create() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                yield alasql_1.default.promise(`insert into users (username, password, fullName) 
-                 values ('${this.username}', '${this.password}', '${this.fullName}')`);
+                // Hash the password before storing in database
+                // Passwords should NEVER be stored in plain text
+                const hashedPassword = yield security_1.hashPassword(this.password);
+                // Escape special characters to prevent SQL injection
+                const escapedUsername = this.username.replace(/'/g, "''");
+                const escapedFullName = this.fullName.replace(/'/g, "''");
+                yield alasql_1.default.promise(`insert into users (username, password, fullName)
+                 values ('${escapedUsername}', '${hashedPassword}', '${escapedFullName}')`);
                 // Retrive the identifier of the new row
                 this.id = alasql_1.default.autoval('users', 'id');
             }

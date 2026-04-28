@@ -10,6 +10,7 @@
 
 import Router from 'express-promise-router';
 import { User, Post, raw } from '../orm';
+import { sanitizeId } from '../security';
 const route = Router();
 
 //--------------------------------------------------------
@@ -18,9 +19,14 @@ const route = Router();
 //--------------------------------------------------------
 
 // Shows the list of posts by a friend
-// Note: no validation that the friend actually is a friend of the current user
 route.get('/posts_friend', async (req, res) => {
-    const friendId = Number(req.query.friend);
+    // Sanitize the friend ID to prevent SQL injection
+    const friendId = sanitizeId(Number(req.query.friend));
+    if (friendId === null) {
+        res.render('posts_friend', { view: 'posts_friend', friend: null, posts: [], error: 'Invalid friend ID' });
+        return;
+    }
+
     const friend = await User.byId(friendId);
     let posts: Post[] = [];
     if (friend != null)
@@ -29,15 +35,21 @@ route.get('/posts_friend', async (req, res) => {
 });
 
 // Like a post and redirect to the 'back' parameter
-// Note: the back parameter can be used for invalidated redirects
-// Note: no validation to prevent the user from liking their own posts
 route.get('/like', async (req, res) => {
-    const postId = Number(req.query.post);
-    const back = String(req.query.back);
-    const friendId = req.query.friend ? Number(req.query.friend) : null;
+    // Sanitize post ID to prevent SQL injection
+    const postId = sanitizeId(Number(req.query.post));
+    if (postId === null) {
+        res.status(400).send('Invalid post ID');
+        return;
+    }
+
+    const back = String(req.query.back || '/');
+    const friendId = req.query.friend ? sanitizeId(Number(req.query.friend)) : null;
+
     const post = await Post.byId(postId);
-    if (post != null)
+    if (post != null) {
         await post.like();
+    }
     res.redirect(303, back + (friendId ? `?friend=${friendId}` : ''));
 });
 
