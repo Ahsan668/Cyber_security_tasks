@@ -14,6 +14,7 @@
   "author": "Benjamin Johnston",
   "license": "Public domain",
   "dependencies": {
+    "@types/express-session": "^1.19.0",
     "alasql": "^0.6.3",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.5",
@@ -23,6 +24,7 @@
     "express": "^4.17.1",
     "express-promise-router": "^4.0.1",
     "express-rate-limit": "^8.5.2",
+    "express-session": "^1.19.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "validator": "^13.15.35",

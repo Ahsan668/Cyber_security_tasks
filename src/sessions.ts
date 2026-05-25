@@ -11,17 +11,6 @@
 import express from 'express';
 import { User } from './orm';
 
-// Add session to the Express request type
-declare global {
-    namespace Express {
-        export interface Request {
-            session: {
-                user?: User
-            };
-        }
-    }
-}
-
 // Create middlware for an insecure session manager
 const insecureSession = (): express.Handler => {
 

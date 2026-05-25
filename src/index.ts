@@ -25,6 +25,7 @@ import {
     signupLimiter,
     apiLimiter
 } from './api-security';
+import { setupCSRFProtection } from './csrf-protection';
 import { exit } from 'process';
 
 const app = express();
@@ -84,15 +85,20 @@ app.set('view engine', 'ejs');
 // - Content-Security-Policy: Restricts resource loading
 app.use(helmet());
 
+// Parse cookies and HTML forms (must be before session/CSRF)
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: false }));
+
 // Setup API Security (Week 4)
 // - Rate limiting to prevent brute force
 // - CORS configuration to restrict API access
 // - Enhanced CSP headers for script injection prevention
 setupAPISecurity(app);
 
-// Parse cookies and HTML forms
-app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: false }));
+// Setup CSRF Protection (Week 5)
+// - Prevents Cross-Site Request Forgery attacks
+// - Uses session-based token validation
+setupCSRFProtection(app);
 
 // Use an insecure cookie-based session manager
 app.use(insecureSession());

@@ -62,7 +62,7 @@ route.post('/login', loginLimiter, async (req, res) => {
     const user = await User.byLogin(username, password);
     const clientIp = (req.ip as string) || 'unknown';
     if (user != null) {
-        req.session.user = user;
+        (req.session as any).user = user;
         logLoginSuccess(username, clientIp);
         res.redirect(303, 'home');
     } else {
@@ -138,7 +138,7 @@ route.post('/signup', signupLimiter, async (req, res) => {
 
 // Remove the currently logged in user from the session
 route.get('/logout', (req, res) => {
-    delete req.session.user;
+    delete (req.session as any).user;
     res.redirect(303, '/');
 });
 

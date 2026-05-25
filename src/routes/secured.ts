@@ -20,7 +20,7 @@ const route = Router();
 // Check the session is logged in before continuing
 // If the user has not logged in, redirect back to home
 route.use((req, res, next) => {
-    if (!req.session.user)
+    if (!(req.session as any).user)
         res.redirect(303, '/');
     else
         next();
@@ -29,20 +29,20 @@ route.use((req, res, next) => {
 // Render the home page
 // Includes a list of posts by friends
 route.get('/home', async (req, res) => {
-    const posts = await req.session.user?.findFriendPosts();
+    const posts = await (req.session as any).user?.findFriendPosts();
     res.render('home', { ...req.session, view: 'home', posts});
 });
 
 // Show a list of current friends and people who are not yet friends
 route.get('/friend_list', async (req, res) => {
-    const friends = await req.session.user?.findFriends();
-    const notFriends = await req.session.user?.findNotFriends();
+    const friends = await (req.session as any).user?.findFriends();
+    const notFriends = await (req.session as any).user?.findNotFriends();
     res.render('friend_list', { ...req.session, view: 'friend_list', friends, notFriends});
 });
 
 // Show a list of posts by the current user
 route.get('/posts_me', async (req, res) => {
-    const posts = await req.session.user?.findPosts();
+    const posts = await (req.session as any).user?.findPosts();
     res.render('posts_me', { ...req.session, view: 'posts_me', posts});
 });
 
@@ -51,10 +51,10 @@ route.post('/post', async (req, res) => {
     const message = sanitizeString(String(req.body.message || ''));
     const back = String(req.body.back || 'home');
 
-    if (req.session.user) {
+    if ((req.session as any).user) {
         // Validate message is not empty
         if (message.length > 0) {
-            await new Post(req.session.user, message, new Date(), 0).create();
+            await new Post((req.session as any).user, message, new Date(), 0).create();
         }
     }
     res.redirect(303, back);
@@ -72,8 +72,8 @@ route.get('/friend_add', async (req, res) => {
     // Retrieve the new friend
     const friend = await User.byId(friendId);
     // If found, then add the new relationship/connection
-    if (friend && req.session.user) {
-        new Friend(req.session.user, friend).create();
+    if (friend && (req.session as any).user) {
+        new Friend((req.session as any).user, friend).create();
     }
     res.render('friend_add', { ...req.session, view: 'friend_add', friend});
 });
