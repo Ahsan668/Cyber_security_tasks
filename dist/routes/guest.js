@@ -25,6 +25,7 @@ const express_promise_router_1 = __importDefault(require("express-promise-router
 const orm_1 = require("../orm");
 const security_1 = require("../security");
 const logger_1 = require("../logger");
+const api_security_1 = require("../api-security");
 const route = express_promise_router_1.default();
 //--------------------------------------------------------
 // Routes that are accessible by all users / guests
@@ -35,7 +36,8 @@ route.get('/', (_req, res) => {
 });
 // Handle the login data posted from the home page
 // Usernames are case insensitive
-route.post('/login', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// Protected with rate limiting: max 5 attempts per 15 minutes
+route.post('/login', api_security_1.loginLimiter, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const username = String(req.body.username || '').toLowerCase().trim();
     const password = String(req.body.password || '');
     const messages = [];
@@ -71,7 +73,8 @@ route.get('/signup', (_req, res) => {
 });
 // Create a new account
 // Validates all fields before storing in database
-route.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// Protected with rate limiting: max 10 attempts per hour
+route.post('/signup', api_security_1.signupLimiter, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // Sanitize and validate all inputs
     const username = security_1.sanitizeString(String(req.body.username || '')).toLowerCase();
     const password = String(req.body.password || '');

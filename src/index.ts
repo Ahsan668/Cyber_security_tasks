@@ -19,6 +19,12 @@ import guest from './routes/guest';
 import unsecured from './routes/unsecured';
 import secured from './routes/secured';
 import logger from './logger';
+import {
+    setupAPISecurity,
+    loginLimiter,
+    signupLimiter,
+    apiLimiter
+} from './api-security';
 import { exit } from 'process';
 
 const app = express();
@@ -77,6 +83,12 @@ app.set('view engine', 'ejs');
 // - Strict-Transport-Security: Enforces HTTPS
 // - Content-Security-Policy: Restricts resource loading
 app.use(helmet());
+
+// Setup API Security (Week 4)
+// - Rate limiting to prevent brute force
+// - CORS configuration to restrict API access
+// - Enhanced CSP headers for script injection prevention
+setupAPISecurity(app);
 
 // Parse cookies and HTML forms
 app.use(cookieParser());

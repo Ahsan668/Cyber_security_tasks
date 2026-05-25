@@ -32,6 +32,7 @@ const guest_1 = __importDefault(require("./routes/guest"));
 const unsecured_1 = __importDefault(require("./routes/unsecured"));
 const secured_1 = __importDefault(require("./routes/secured"));
 const logger_1 = __importDefault(require("./logger"));
+const api_security_1 = require("./api-security");
 const process_1 = require("process");
 const app = express_1.default();
 let port = 3000;
@@ -81,6 +82,11 @@ app.set('view engine', 'ejs');
 // - Strict-Transport-Security: Enforces HTTPS
 // - Content-Security-Policy: Restricts resource loading
 app.use(helmet());
+// Setup API Security (Week 4)
+// - Rate limiting to prevent brute force
+// - CORS configuration to restrict API access
+// - Enhanced CSP headers for script injection prevention
+api_security_1.setupAPISecurity(app);
 // Parse cookies and HTML forms
 app.use(cookie_parser_1.default());
 app.use(body_parser_1.default.urlencoded({ extended: false }));

@@ -22,6 +22,7 @@ import {
     logSignup,
     logValidationError
 } from '../logger';
+import { loginLimiter, signupLimiter } from '../api-security';
 const route = Router();
 
 //--------------------------------------------------------
@@ -35,7 +36,8 @@ route.get('/', (_req, res) => {
 
 // Handle the login data posted from the home page
 // Usernames are case insensitive
-route.post('/login', async (req, res) => {
+// Protected with rate limiting: max 5 attempts per 15 minutes
+route.post('/login', loginLimiter, async (req, res) => {
     const username = String(req.body.username || '').toLowerCase().trim();
     const password = String(req.body.password || '');
 
@@ -77,7 +79,8 @@ route.get('/signup', (_req, res) => {
 
 // Create a new account
 // Validates all fields before storing in database
-route.post('/signup', async (req, res) => {
+// Protected with rate limiting: max 10 attempts per hour
+route.post('/signup', signupLimiter, async (req, res) => {
     // Sanitize and validate all inputs
     const username = sanitizeString(String(req.body.username || '')).toLowerCase();
     const password = String(req.body.password || '');
